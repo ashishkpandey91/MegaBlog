@@ -1,26 +1,28 @@
-/* eslint-disable react/prop-types */
 import React, { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { Button, Input, RTE, Select } from "..";
 import appwriteService from "../../appwrite/config";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import PropTypes from "prop-types";
 
 export default function PostForm({ post }) {
-  const { register, handleSubmit, watch, setValue, control, getValues } =
-    useForm({
-      defaultValues: {
-        title: post?.title || "",
-        slug: post?.$id || "",
-        content: post?.content || "",
-        status: post?.status || "active",
-      },
-    });
+  const form = useForm({
+    defaultValues: {
+      title: post?.title || "",
+      slug: post?.$id || "",
+      content: post?.content || "",
+      status: post?.status || "active",
+    },
+  });
+
+  const { register, handleSubmit, watch, setValue, control, getValues } = form;
 
   const navigate = useNavigate();
   const userData = useSelector((state) => state.auth.userData);
 
   const submit = async (data) => {
+    console.log("data: ", data);
     if (post) {
       const file = data.image[0]
         ? await appwriteService.uploadFile(data.image[0])
@@ -46,7 +48,7 @@ export default function PostForm({ post }) {
         data.featuredImage = fileId;
         const dbPost = await appwriteService.createPost({
           ...data,
-          userId: userData.$id
+          userId: userData.$id,
         });
 
         if (dbPost) {
@@ -138,3 +140,16 @@ export default function PostForm({ post }) {
     </form>
   );
 }
+
+PostForm.propTypes = {
+  post: PropTypes.oneOfType([
+    PropTypes.shape({
+      title: PropTypes.string.isRequired,
+      $id: PropTypes.string.isRequired,
+      content: PropTypes.string,
+      featuredImage: PropTypes.string,
+      status: PropTypes.string,
+    }),
+    PropTypes.oneOf([null]),
+  ]),
+};
